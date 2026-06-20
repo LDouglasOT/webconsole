@@ -1,0 +1,1394 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fleet Management — Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root {
+      --white:        #ffffff;
+      --bg:           #f4f6f9;
+      --bg-card:      #ffffff;
+      --border:       #e2e7ef;
+      --border-focus: #3b82f6;
+      --blue:         #2563eb;
+      --blue-light:   #eff6ff;
+      --blue-mid:     #93c5fd;
+      --green:        #16a34a;
+      --green-light:  #f0fdf4;
+      --amber:        #d97706;
+      --amber-light:  #fffbeb;
+      --red:          #dc2626;
+      --red-light:    #fef2f2;
+      --violet:       #7c3aed;
+      --violet-light: #f5f3ff;
+      --text-1:       #111827;
+      --text-2:       #374151;
+      --text-3:       #6b7280;
+      --text-4:       #9ca3af;
+      --font:         'Plus Jakarta Sans', sans-serif;
+      --mono:         'JetBrains Mono', monospace;
+      --r:            10px;
+      --r-sm:         7px;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow:       0 4px 16px rgba(0,0,0,0.08);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,0.10);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text-1);
+      font-family: var(--font);
+      font-size: 14px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #c0c8d8; }
+
+    /* ─── App shell ─── */
+    .app { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+    /* ─── Top header ─── */
+    .app-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+      z-index: 100;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--blue);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      color: white;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+    .logo-text { font-size: 15px; font-weight: 800; color: var(--text-1); letter-spacing: -0.4px; }
+    .logo-text span { color: var(--blue); }
+    .header-divider { width: 1px; height: 28px; background: var(--border); }
+
+    /* Period picker in header */
+    .period-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 5px 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .period-wrap:focus-within { border-color: var(--blue); }
+    .period-wrap label { font-size: 11px; font-weight: 600; color: var(--text-3); cursor: pointer; white-space: nowrap; }
+    #periodInput {
+      background: none; border: none; outline: none;
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      color: var(--blue); cursor: pointer; padding: 0;
+    }
+
+    .header-spacer { flex: 1; }
+
+    /* Search */
+    .search-wrap { position: relative; }
+    .search-wrap .si {
+      position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+      color: var(--text-4); font-size: 13px; pointer-events: none;
+    }
+    #searchInput {
+      background: var(--bg); border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); color: var(--text-1);
+      font-size: 13px; font-family: var(--font);
+      padding: 7px 12px 7px 32px; width: 220px; outline: none;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    #searchInput:focus { border-color: var(--blue); background: var(--white); }
+    #searchInput::placeholder { color: var(--text-4); }
+
+    /* ─── Buttons ─── */
+    .btn-f {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 8px 16px; border-radius: var(--r-sm);
+      font-family: var(--font); font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-f i { font-size: 14px; }
+    .btn-primary-f { background: var(--blue); color: white; }
+    .btn-primary-f:hover { background: #1d4ed8; }
+    .btn-secondary-f { background: var(--white); color: var(--text-2); border: 1.5px solid var(--border); }
+    .btn-secondary-f:hover { background: var(--bg); border-color: #c0c8d8; }
+    .btn-danger-f { background: var(--red-light); color: var(--red); border: 1.5px solid #fca5a5; }
+    .btn-danger-f:hover { background: #fee2e2; }
+    .btn-success-f { background: var(--green-light); color: var(--green); border: 1.5px solid #86efac; }
+    .btn-success-f:hover { background: #dcfce7; }
+    .btn-amber-f { background: var(--amber-light); color: var(--amber); border: 1.5px solid #fcd34d; }
+    .btn-amber-f:hover { background: #fef3c7; }
+
+    /* ─── Main tab strip ─── */
+    .main-tabs {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .main-tab-btn {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px;
+      font-family: var(--font); font-size: 13px; font-weight: 600;
+      color: var(--text-3); cursor: pointer;
+      border: none; background: none;
+      border-bottom: 3px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -1px;
+    }
+    .main-tab-btn:hover { color: var(--text-1); }
+    .main-tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .main-tab-btn .tab-badge {
+      background: var(--blue-light); color: var(--blue);
+      border-radius: 20px; font-size: 10px; font-weight: 700;
+      padding: 1px 7px; font-family: var(--mono);
+    }
+    .main-tab-btn.active .tab-badge { background: var(--blue); color: white; }
+
+    /* ─── Page body ─── */
+    .page-body { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+    /* ─── Tab panes ─── */
+    .tab-pane { display: none; animation: fadeIn 0.2s ease; }
+    .tab-pane.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+    /* ─── Section headers ─── */
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .section-title {
+      font-size: 16px; font-weight: 700; color: var(--text-1);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title i { color: var(--blue); font-size: 17px; }
+
+    /* ─── KPI Cards ─── */
+    .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    .kpi-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative; overflow: hidden;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .kpi-card:hover { box-shadow: var(--shadow); transform: translateY(-1px); }
+    .kpi-stripe {
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      border-radius: var(--r) var(--r) 0 0;
+    }
+    .kpi-card-blue   .kpi-stripe { background: var(--blue); }
+    .kpi-card-green  .kpi-stripe { background: var(--green); }
+    .kpi-card-amber  .kpi-stripe { background: var(--amber); }
+    .kpi-card-violet .kpi-stripe { background: var(--violet); }
+    .kpi-icon-wrap {
+      width: 38px; height: 38px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; margin-bottom: 12px;
+    }
+    .kpi-card-blue   .kpi-icon-wrap { background: var(--blue-light);   color: var(--blue); }
+    .kpi-card-green  .kpi-icon-wrap { background: var(--green-light);  color: var(--green); }
+    .kpi-card-amber  .kpi-icon-wrap { background: var(--amber-light);  color: var(--amber); }
+    .kpi-card-violet .kpi-icon-wrap { background: var(--violet-light); color: var(--violet); }
+    .kpi-label { font-size: 11px; font-weight: 600; color: var(--text-3); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+    .kpi-value { font-family: var(--mono); font-size: 20px; font-weight: 500; color: var(--text-1); }
+    .kpi-sub   { font-size: 11px; color: var(--text-4); margin-top: 4px; }
+
+    /* ─── Data entry panel ─── */
+    .entry-layout { display: grid; grid-template-columns: 420px 1fr; gap: 20px; align-items: start; }
+
+    /* ─── Inline form card ─── */
+    .form-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+      position: sticky; top: 0;
+    }
+    .form-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .form-card-title { font-size: 14px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 8px; }
+    .form-card-title i { color: var(--blue); }
+    .form-card-body { padding: 20px; }
+
+    .field-group { margin-bottom: 14px; }
+    .field-label {
+      display: block; font-size: 11.5px; font-weight: 600;
+      color: var(--text-2); margin-bottom: 5px; letter-spacing: 0.2px;
+    }
+    .field-label .req { color: var(--red); margin-left: 2px; }
+    .field-input {
+      width: 100%; padding: 9px 12px;
+      border: 1.5px solid var(--border); border-radius: var(--r-sm);
+      font-family: var(--font); font-size: 13px; color: var(--text-1);
+      background: var(--white); outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .field-input:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,0.10); }
+    .field-input::placeholder { color: var(--text-4); }
+    .field-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236b7280' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+    .field-row { display: grid; gap: 12px; }
+    .field-row.col-2 { grid-template-columns: 1fr 1fr; }
+    .field-row.col-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+    .computed-field {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 9px 12px;
+      font-family: var(--mono); font-size: 13px; font-weight: 500;
+      color: var(--blue); cursor: default;
+    }
+
+    .form-divider {
+      border: none; border-top: 1px dashed var(--border);
+      margin: 16px 0;
+    }
+    .form-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; color: var(--text-4);
+      margin-bottom: 12px;
+    }
+
+    /* ─── CSV drop zone inside form card ─── */
+    .csv-drop {
+      border: 2px dashed var(--border); border-radius: var(--r);
+      padding: 24px 16px; text-align: center; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative; background: var(--bg);
+    }
+    .csv-drop.drag-over { border-color: var(--blue); background: var(--blue-light); }
+    .csv-drop input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .csv-drop-icon { font-size: 28px; color: var(--text-4); margin-bottom: 8px; display: block; }
+    .csv-drop-text { font-size: 12.5px; color: var(--text-3); line-height: 1.5; }
+    .csv-drop-text strong { color: var(--blue); }
+
+    /* ─── Records table panel ─── */
+    .table-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+    .table-toolbar {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    }
+    .table-info { font-size: 12.5px; color: var(--text-3); }
+    .table-info strong { color: var(--text-1); font-family: var(--mono); }
+
+    .fleet-table { width: 100%; border-collapse: collapse; }
+    .fleet-table thead th {
+      padding: 10px 14px;
+      text-align: left; font-size: 10.5px; font-weight: 700;
+      letter-spacing: 0.8px; text-transform: uppercase;
+      color: var(--text-3); background: var(--bg);
+      border-bottom: 1.5px solid var(--border);
+      white-space: nowrap; position: sticky; top: 0; z-index: 5;
+    }
+    .fleet-table tbody tr { border-bottom: 1px solid #f1f4f9; transition: background 0.1s; }
+    .fleet-table tbody tr:hover { background: #f8fafd; }
+    .fleet-table tbody tr:last-child { border-bottom: none; }
+    .fleet-table td { padding: 10px 14px; font-size: 13px; color: var(--text-2); vertical-align: middle; white-space: nowrap; }
+    .fleet-table td.mono-cell { font-family: var(--mono); font-size: 12.5px; }
+    .fleet-table td.amount-cell { font-family: var(--mono); color: var(--blue); font-weight: 500; }
+    .fleet-table td.net-cell { font-family: var(--mono); color: var(--green); font-weight: 500; }
+    .fleet-table td.plate-cell { font-weight: 700; color: var(--text-1); }
+
+    .badge-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-cash   { background: #eff6ff; color: #1d4ed8; }
+    .badge-credit { background: var(--violet-light); color: var(--violet); }
+    .badge-caddell { background: var(--amber-light); color: var(--amber); }
+    .badge-adhoc   { background: var(--green-light); color: var(--green); }
+
+    .row-actions { display: flex; gap: 4px; }
+    .icon-btn {
+      width: 30px; height: 30px; border-radius: 7px;
+      display: inline-flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--border); background: var(--white);
+      cursor: pointer; font-size: 13px; color: var(--text-3);
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { color: var(--blue); border-color: var(--blue-mid); background: var(--blue-light); }
+    .icon-btn.danger:hover { color: var(--red); border-color: #fca5a5; background: var(--red-light); }
+
+    /* ─── Empty state ─── */
+    .empty-state {
+      padding: 56px 20px; text-align: center; color: var(--text-4);
+    }
+    .empty-state i { font-size: 42px; display: block; margin-bottom: 12px; color: var(--border); }
+    .empty-state p { font-size: 13.5px; }
+
+    .stock-chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+
+    /* ─── Loading overlay ─── */
+    .loading-overlay {
+      display: none; position: absolute; inset: 0; background: rgba(255,255,255,0.75);
+      align-items: center; justify-content: center; border-radius: var(--r); z-index: 20;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 24px; height: 24px; border-radius: 50%;
+      border: 2.5px solid var(--border); border-top-color: var(--blue);
+      animation: spin 0.75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─── Visualization tab ─── */
+    .viz-kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+
+    .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+    .charts-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+
+    .chart-card {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-sm);
+      padding: 20px;
+    }
+    .chart-card-wide { grid-column: span 2; }
+    .chart-title {
+      font-size: 13px; font-weight: 700; color: var(--text-1);
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .chart-title i { font-size: 15px; }
+    .chart-wrap { height: 230px; position: relative; }
+    .chart-wrap-sm { height: 200px; position: relative; }
+
+    /* Distribution table */
+    .dist-table { width: 100%; }
+    .dist-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 0; border-bottom: 1px solid #f1f4f9;
+    }
+    .dist-row:last-child { border-bottom: none; }
+    .dist-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .dist-label { flex: 1; font-size: 12.5px; color: var(--text-2); }
+    .dist-val { font-family: var(--mono); font-size: 12px; color: var(--text-1); font-weight: 500; }
+    .dist-pct { font-size: 11px; color: var(--text-4); margin-left: 4px; }
+    .dist-bar-wrap { flex: 2; background: var(--bg); border-radius: 3px; height: 6px; overflow: hidden; }
+    .dist-bar { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+    /* ─── Modals ─── */
+    .modal-content {
+      background: var(--white);
+      border: 1.5px solid var(--border);
+      border-radius: var(--r);
+      box-shadow: var(--shadow-lg);
+    }
+    .modal-header {
+      padding: 18px 22px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; color: var(--text-1); display: flex; align-items: center; gap: 8px; }
+    .modal-title i { font-size: 16px; }
+    .modal-body { padding: 20px 22px; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .btn-close { background: none; border: none; cursor: pointer; font-size: 18px; color: var(--text-3); padding: 4px; border-radius: 5px; transition: background 0.15s; }
+    .btn-close:hover { background: var(--bg); color: var(--text-1); }
+
+    .modal .field-group { margin-bottom: 14px; }
+
+    /* Error box */
+    .error-box {
+      background: var(--red-light); border: 1px solid #fca5a5;
+      border-radius: var(--r-sm); padding: 10px 14px; margin-top: 14px;
+    }
+    .error-box-item { font-size: 12px; color: var(--red); margin-bottom: 2px; }
+
+    /* ─── Toast ─── */
+    #toastContainer {
+      position: fixed; bottom: 22px; right: 22px;
+      z-index: 9999; display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast-item {
+      background: var(--white); border: 1.5px solid var(--border);
+      border-radius: var(--r-sm); padding: 12px 16px;
+      display: flex; align-items: flex-start; gap: 10px;
+      box-shadow: var(--shadow); min-width: 270px; max-width: 360px;
+      animation: toastSlide 0.25s ease; font-size: 13px;
+    }
+    @keyframes toastSlide { from { transform: translateX(20px); opacity: 0; } to { transform: none; opacity: 1; } }
+    .toast-item.success { border-left: 3px solid var(--green); }
+    .toast-item.error   { border-left: 3px solid var(--red); }
+    .toast-item.info    { border-left: 3px solid var(--blue); }
+    .toast-item i { margin-top: 1px; flex-shrink: 0; }
+    .toast-item.success i { color: var(--green); }
+    .toast-item.error   i { color: var(--red); }
+    .toast-item.info    i { color: var(--blue); }
+    .toast-text { flex: 1; color: var(--text-1); }
+
+    /* ─── Inline import result ─── */
+    .import-result-ok  { background: var(--green-light); border: 1px solid #86efac; border-radius: var(--r-sm); padding: 12px 14px; }
+    .import-result-err { background: var(--red-light);   border: 1px solid #fca5a5; border-radius: var(--r-sm); padding: 12px 14px; }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 1100px) {
+      .entry-layout { grid-template-columns: 1fr; }
+      .form-card { position: static; }
+      .kpi-row, .viz-kpi-row { grid-template-columns: 1fr 1fr; }
+      .charts-grid { grid-template-columns: 1fr; }
+      .charts-grid-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 700px) {
+      .kpi-row, .viz-kpi-row { grid-template-columns: 1fr 1fr; }
+      .charts-grid-3 { grid-template-columns: 1fr; }
+      .app-header { padding: 0 16px; gap: 10px; }
+      .main-tabs { padding: 0 16px; }
+      .page-body { padding: 16px; }
+      #searchInput { width: 160px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="app-header">
+    <a class="logo" href="#">
+      <div class="logo-icon"><i class="bi bi-truck-front-fill"></i></div>
+      <span class="logo-text">Fleet<span>Ops</span></span>
+    </a>
+    <div class="header-divider"></div>
+
+    <div class="period-wrap">
+      <label for="periodInput"><i class="bi bi-calendar3"></i>&nbsp; Period</label>
+      <input type="month" id="periodInput" value="{{ current_period }}" />
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="search-wrap">
+      <i class="bi bi-search si"></i>
+      <input type="text" id="searchInput" placeholder="Search truck or item…" autocomplete="off" />
+    </div>
+    <button class="btn-f btn-primary-f" onclick="window.openAddModal()">
+      <i class="bi bi-plus-lg"></i> Add Record
+    </button>
+  </header>
+
+  <!-- ══════════════ MAIN TAB STRIP ══════════════ -->
+  <div class="main-tabs">
+    <button class="main-tab-btn active" id="mainTabEntry" onclick="switchMainTab('entry')">
+      <i class="bi bi-pencil-square"></i>
+      Data Entry
+      <span class="tab-badge" id="entryBadge">0</span>
+    </button>
+    <button class="main-tab-btn" id="mainTabViz" onclick="switchMainTab('viz')">
+      <i class="bi bi-bar-chart-line"></i>
+      Visualization
+    </button>
+  </div>
+
+  <!-- ══════════════ PAGE BODY ══════════════ -->
+  <div class="page-body">
+
+    <!-- ══════════ TAB: DATA ENTRY ══════════ -->
+    <div class="tab-pane active" id="paneEntry">
+
+      <div class="entry-layout">
+
+        <!-- LEFT: Form + CSV -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+
+          <!-- Add Record Form -->
+          <div class="form-card" id="addFormCard">
+            <div class="form-card-header">
+              <span class="form-card-title"><i class="bi bi-plus-circle-fill"></i> New Maintenance Record</span>
+              <span id="addFormMode" style="font-size:11px; font-weight:600; color:var(--text-4); background:var(--border); padding:2px 8px; border-radius:10px;">NEW</span>
+            </div>
+            <div class="form-card-body">
+              <form id="inlineAddForm" novalidate>
+                {% csrf_token %}
+                <input type="hidden" id="inlineEditPk" value="" />
+
+                <div class="form-section-label">Basic Info</div>
+                <div class="field-row col-2">
+                  <div class="field-group">
+                    <label class="field-label">Date <span class="req">*</span></label>
+                    {{ form.date }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Purchase Status</label>
+                    {{ form.purchase_status }}
+                  </div>
+                </div>
+                <div class="field-row col-2">
+                  <div class="field-group">
+                    <label class="field-label">Truck / Plate <span class="req">*</span></label>
+                    {{ form.truck_number_plate }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Project</label>
+                    {{ form.project }}
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">Item Needed <span class="req">*</span></label>
+                  {{ form.item_needed }}
+                </div>
+
+                <hr class="form-divider" />
+                <div class="form-section-label">Pricing</div>
+
+                <div class="field-row col-3">
+                  <div class="field-group">
+                    <label class="field-label">Quantity <span class="req">*</span></label>
+                    {{ form.quantity }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Unit Cost <span class="req">*</span></label>
+                    {{ form.unit_cost }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Amount (auto)</label>
+                    <div class="computed-field" id="inlineAmountDisplay">0.00</div>
+                  </div>
+                </div>
+                <div class="field-row col-3">
+                  <div class="field-group">
+                    <label class="field-label">VAT</label>
+                    {{ form.vat }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">VAT Withholding</label>
+                    {{ form.vat_wth }}
+                  </div>
+                  <div class="field-group">
+                    <label class="field-label">Net Amount (auto)</label>
+                    <div class="computed-field" id="inlineNetDisplay">0.00</div>
+                  </div>
+                </div>
+                <div class="field-group">
+                  <label class="field-label">% Cost</label>
+                  {{ form.cost_percentage }}
+                </div>
+
+                <div id="inlineFormErrors"></div>
+
+                <div style="display:flex; gap:8px; margin-top:18px;">
+                  <button type="button" class="btn-f btn-primary-f" id="inlineSubmitBtn" onclick="submitInlineForm()" style="flex:1; justify-content:center;">
+                    <i class="bi bi-check-lg"></i> <span id="inlineSubmitLabel">Save Record</span>
+                  </button>
+                  <button type="button" class="btn-f btn-secondary-f" id="inlineCancelBtn" onclick="cancelInlineEdit()" style="display:none;">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <!-- CSV Import Card -->
+          <div class="form-card">
+            <div class="form-card-header">
+              <span class="form-card-title"><i class="bi bi-cloud-upload-fill"></i> Import CSV</span>
+            </div>
+            <div class="form-card-body">
+              <p style="font-size:12px; color:var(--text-3); margin-bottom:12px; line-height:1.6;">
+                Columns (in order): <code style="background:var(--bg); padding:1px 5px; border-radius:4px; font-size:11px; color:var(--blue);">date, truck, item, qty, unit_cost, vat, vat_wth, status, project, cost%</code>
+              </p>
+              <div class="csv-drop" id="dropZone">
+                <input type="file" id="csvFileInput" accept=".csv" onchange="handleCsvSelect(this)" />
+                <i class="bi bi-file-earmark-spreadsheet csv-drop-icon"></i>
+                <p class="csv-drop-text" id="dropLabel"><strong>Click to browse</strong> or drag & drop a .csv file</p>
+              </div>
+              <div style="display:flex; align-items:center; gap:12px; margin-top:12px;">
+                <div style="flex:1;">
+                  <label class="field-label">Skip header rows</label>
+                  <input type="number" class="field-input" id="csvSkipRows" value="1" min="0" style="width:100%;" />
+                </div>
+                <div style="padding-top:18px;">
+                  <button class="btn-f btn-amber-f" id="csvSubmitBtn" onclick="submitCsv()" disabled>
+                    <i class="bi bi-upload"></i> Import
+                  </button>
+                </div>
+              </div>
+              <div id="csvResult" style="margin-top:12px;"></div>
+            </div>
+          </div>
+
+        </div><!-- /left -->
+
+        <!-- RIGHT: Records table -->
+        <div class="table-card" style="position:relative;">
+          <div id="tableLoading" class="loading-overlay"><div class="spinner"></div></div>
+          <div class="table-toolbar">
+            <div class="table-info">
+              <strong id="recordCountLabel">0</strong> records this period
+            </div>
+            <button class="btn-f btn-secondary-f" onclick="reloadData()" style="padding:6px 12px;">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
+          </div>
+          <div style="overflow-x:auto; max-height:620px; overflow-y:auto;">
+            <table class="fleet-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Truck / Plate</th>
+                  <th>Item Needed</th>
+                  <th>Qty</th>
+                  <th>Unit Cost</th>
+                  <th>Amount</th>
+                  <th>VAT</th>
+                  <th>Net Amount</th>
+                  <th>Status</th>
+                  <th>Project</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="fleetTableBody">
+                <tr><td colspan="12">
+                  <div class="empty-state">
+                    <i class="bi bi-truck"></i>
+                    <p>No records yet. Use the form to add your first entry.</p>
+                  </div>
+                </td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div><!-- /entry-layout -->
+    </div><!-- /paneEntry -->
+
+    <!-- ══════════ TAB: VISUALIZATION ══════════ -->
+    <div class="tab-pane" id="paneViz">
+
+      <!-- KPI row -->
+      <div class="viz-kpi-row">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-currency-dollar"></i></div>
+          <div class="kpi-label">Total Spent</div>
+          <div class="kpi-value" id="vizKpiTotal">—</div>
+          <div class="kpi-sub" id="vizKpiCount">—</div>
+        </div>
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-receipt"></i></div>
+          <div class="kpi-label">Net Amount</div>
+          <div class="kpi-value" id="vizKpiNet">—</div>
+          <div class="kpi-sub">After VAT adjustments</div>
+        </div>
+        <div class="kpi-card kpi-card-amber">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-cash-stack"></i></div>
+          <div class="kpi-label">Cash</div>
+          <div class="kpi-value" id="vizKpiCash">—</div>
+          <div class="kpi-sub">Cash purchases</div>
+        </div>
+        <div class="kpi-card kpi-card-violet">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-credit-card"></i></div>
+          <div class="kpi-label">Credit</div>
+          <div class="kpi-value" id="vizKpiCredit">—</div>
+          <div class="kpi-sub">Credit purchases</div>
+        </div>
+      </div>
+
+      <!-- Stock KPI row -->
+      <div class="viz-kpi-row">
+        <div class="kpi-card kpi-card-blue">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-box-seam"></i></div>
+          <div class="kpi-label">Total Stocked</div>
+          <div class="kpi-value" id="vizKpiStocked">—</div>
+        </div>
+        <div class="kpi-card kpi-card-amber">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-box-arrow-right"></i></div>
+          <div class="kpi-label">Total Released</div>
+          <div class="kpi-value" id="vizKpiReleased">—</div>
+        </div>
+        <div class="kpi-card kpi-card-green">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-boxes"></i></div>
+          <div class="kpi-label">Remaining</div>
+          <div class="kpi-value" id="vizKpiRemaining">—</div>
+        </div>
+        <div class="kpi-card kpi-card-violet">
+          <div class="kpi-stripe"></div>
+          <div class="kpi-icon-wrap"><i class="bi bi-percent"></i></div>
+          <div class="kpi-label">Cash %</div>
+          <div class="kpi-value" id="vizKpiCashPct">—</div>
+        </div>
+      </div>
+
+      <!-- Charts top row -->
+      <div class="chart-card" style="margin-bottom:18px;">
+        <div class="chart-title"><i class="bi bi-bar-chart-fill" style="color:var(--blue);"></i> Top 5 Expenditures</div>
+        <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+      </div>
+
+      <!-- Stock vs Release + Daily Expenditure -->
+      <div class="stock-chart-row">
+        <div class="chart-card">
+          <div class="chart-title"><i class="bi bi-arrow-left-right" style="color:var(--blue);"></i> Stock In vs Stock Release</div>
+          <div class="chart-wrap-sm"><canvas id="stockChart"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title"><i class="bi bi-calendar-day" style="color:var(--green);"></i> Daily Expenditure</div>
+          <div class="chart-wrap-sm"><canvas id="dailyChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Charts bottom row -->
+      <div class="charts-grid-3">
+
+        <div class="chart-card">
+          <div class="chart-title"><i class="bi bi-pie-chart-fill" style="color:var(--violet);"></i> By Project</div>
+          <div class="chart-wrap-sm"><canvas id="projectDoughnut"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title"><i class="bi bi-truck" style="color:var(--amber);"></i> By Truck</div>
+          <div class="chart-wrap-sm"><canvas id="truckDoughnut"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title"><i class="bi bi-circle-dot" style="color:var(--green);"></i> Cash vs Credit %</div>
+          <div class="chart-wrap-sm"><canvas id="statusDoughnut"></canvas></div>
+        </div>
+
+      </div>
+
+    </div><!-- /paneViz -->
+
+  </div><!-- /page-body -->
+</div><!-- /app -->
+
+<!-- ─── Toast container ─── -->
+<div id="toastContainer"></div>
+
+<!-- ─── Delete confirmation modal ─── -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" style="color:var(--red);"><i class="bi bi-exclamation-triangle-fill"></i> Delete Record?</div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"><i class="bi bi-x"></i></button>
+      </div>
+      <div class="modal-body" style="font-size:13.5px; color:var(--text-2); line-height:1.6;">
+        You're about to delete <strong id="deleteLabel" style="color:var(--text-1);"></strong>. This cannot be undone.
+      </div>
+      <div class="modal-footer">
+        <button class="btn-f btn-secondary-f" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn-f btn-danger-f" id="confirmDeleteBtn" onclick="confirmDelete()">
+          <i class="bi bi-trash3"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+{{ urls|json_script:"fleet-urls-json" }}
+
+<script>
+(function () {
+  'use strict';
+
+  /* ── URL registry ── */
+  const URLS = JSON.parse(document.getElementById('fleet-urls-json').textContent);
+
+  /* ── State ── */
+  let currentPeriod  = document.getElementById('periodInput').value;
+  let currentSearch  = '';
+  let allRecords     = [];
+  let currentKpi     = {};
+  let currentCharts  = {};
+  let deleteTargetPk = null;
+  let editingPk      = null;
+  let barInst = null, projInst = null, truckInst = null, dailyInst = null, stockInst = null, statusInst = null;
+
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+
+  /* ════════════════════════════════
+     UTILITIES
+  ════════════════════════════════ */
+
+  function csrf() {
+    return document.querySelector('[name=csrfmiddlewaretoken]').value;
+  }
+
+  function fmt(n, dp = 2) {
+    if (n == null || n === '') return '—';
+    return parseFloat(n).toLocaleString('en-UG', { minimumFractionDigits: dp, maximumFractionDigits: dp });
+  }
+
+  function fmtC(n) { return 'UGX\u00A0' + fmt(n); }
+
+  function esc(s) {
+    if (!s) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function calcAmount(qty, uc) { return (parseFloat(qty)||0) * (parseFloat(uc)||0); }
+  function calcNet(amt, vat, vw) { return (parseFloat(amt)||0) + (parseFloat(vat)||0) - (parseFloat(vw)||0); }
+
+  function showLoading(v) {
+    document.getElementById('tableLoading').classList.toggle('show', v);
+  }
+
+  function toast(msg, type = 'success') {
+    const icons = { success:'bi-check-circle-fill', error:'bi-x-circle-fill', info:'bi-info-circle-fill' };
+    const t = document.createElement('div');
+    t.className = `toast-item ${type}`;
+    t.innerHTML = `<i class="bi ${icons[type]}"></i><span class="toast-text">${msg}</span>`;
+    document.getElementById('toastContainer').appendChild(t);
+    setTimeout(() => { t.style.transition='opacity .3s'; t.style.opacity='0'; setTimeout(()=>t.remove(),320); }, 3600);
+  }
+
+  function renderErrors(errors, containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    if (!errors || !Object.keys(errors).length) { el.innerHTML=''; return; }
+    let h = '<div class="error-box">';
+    for (const [f,msgs] of Object.entries(errors)) {
+      h += `<div class="error-box-item"><strong>${f}:</strong> ${Array.isArray(msgs)?msgs.join(', '):msgs}</div>`;
+    }
+    h += '</div>';
+    el.innerHTML = h;
+  }
+
+  function btnLoad(id, loading) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    if (loading) { btn._orig = btn.innerHTML; btn.innerHTML = '<span class="spinner" style="width:16px;height:16px;border-width:2px;"></span>&nbsp;Saving…'; btn.disabled = true; }
+    else { btn.innerHTML = btn._orig || 'Submit'; btn.disabled = false; }
+  }
+
+  /* ════════════════════════════════
+     MAIN TAB SWITCH
+  ════════════════════════════════ */
+
+  function switchMainTab(tab) {
+    document.getElementById('paneEntry').classList.toggle('active', tab === 'entry');
+    document.getElementById('paneViz').classList.toggle('active', tab === 'viz');
+    document.getElementById('mainTabEntry').classList.toggle('active', tab === 'entry');
+    document.getElementById('mainTabViz').classList.toggle('active', tab === 'viz');
+    if (tab === 'viz') {
+      setTimeout(() => {
+        if (barInst) barInst.resize();
+        if (projInst) projInst.resize();
+        if (truckInst) truckInst.resize();
+        if (dailyInst) dailyInst.resize();
+        if (stockInst) stockInst.resize();
+        if (statusInst) statusInst.resize();
+      }, 60);
+    }
+  }
+
+  /* ════════════════════════════════
+     DATA LOADING
+  ════════════════════════════════ */
+
+  function reloadData() {
+    showLoading(true);
+    const p = new URLSearchParams({ period: currentPeriod });
+    if (currentSearch) p.set('search', currentSearch);
+    fetch(`${URLS.fetch_fleet_data}?${p}`)
+      .then(r => r.json())
+      .then(data => {
+        allRecords   = data.records || [];
+        currentKpi   = data.kpi    || {};
+        currentCharts= data.charts || {};
+        renderTable(allRecords);
+        renderKpis(currentKpi);
+        renderCharts(currentCharts);
+        showLoading(false);
+      })
+      .catch(() => { toast('Failed to load data.', 'error'); showLoading(false); });
+  }
+
+  /* ════════════════════════════════
+     KPI
+  ════════════════════════════════ */
+
+  function renderKpis(k) {
+    if (!k) return;
+    document.getElementById('vizKpiTotal').textContent  = fmtC(k.total_amount);
+    document.getElementById('vizKpiNet').textContent    = fmtC(k.total_net);
+    document.getElementById('vizKpiCash').textContent   = fmtC(k.total_cash);
+    document.getElementById('vizKpiCredit').textContent = fmtC(k.total_credit);
+    document.getElementById('vizKpiCount').textContent  = `${k.record_count} record${k.record_count!==1?'s':''}`;
+
+    document.getElementById('vizKpiStocked').textContent   = fmt(k.total_stocked, 2);
+    document.getElementById('vizKpiReleased').textContent  = fmt(k.total_released, 2);
+    document.getElementById('vizKpiRemaining').textContent = fmt(k.total_remaining, 2);
+    document.getElementById('vizKpiCashPct').textContent   = fmt(k.purchase_status_pct?.data?.[0] || 0, 1) + '%';
+
+    const cnt = k.record_count || 0;
+    document.getElementById('recordCountLabel').textContent  = cnt;
+    document.getElementById('entryBadge').textContent        = cnt;
+  }
+
+  /* ════════════════════════════════
+     TABLE
+  ════════════════════════════════ */
+
+  function renderTable(records) {
+    const tbody = document.getElementById('fleetTableBody');
+    if (!records.length) {
+      tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><i class="bi bi-truck"></i><p>No records found for this period.</p></div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = records.map((r, i) => `
+      <tr id="row-${r.id}">
+        <td class="mono-cell" style="color:var(--text-4)">${i+1}</td>
+        <td class="mono-cell">${r.date||'—'}</td>
+        <td class="plate-cell">${esc(r.truck_number_plate)}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;" title="${esc(r.item_needed)}">${esc(r.item_needed)}</td>
+        <td class="mono-cell">${fmt(r.quantity,4)}</td>
+        <td class="mono-cell">${fmt(r.unit_cost)}</td>
+        <td class="amount-cell">${fmt(r.amount)}</td>
+        <td class="mono-cell">${fmt(r.vat)}</td>
+        <td class="net-cell">${fmt(r.amount_at_net)}</td>
+        <td><span class="badge-pill ${r.purchase_status==='CASH'?'badge-cash':'badge-credit'}">${esc(r.purchase_status_display)}</span></td>
+        <td><span class="badge-pill ${r.project==='CADDELL'?'badge-caddell':'badge-adhoc'}">${esc(r.project_display)}</span></td>
+        <td>
+          <div class="row-actions">
+            <button class="icon-btn" onclick="startInlineEdit(${r.id})" title="Edit"><i class="bi bi-pencil"></i></button>
+            <button class="icon-btn danger" onclick="openDeleteModal(${r.id},'${esc(r.item_needed)}')" title="Delete"><i class="bi bi-trash3"></i></button>
+          </div>
+        </td>
+      </tr>`).join('');
+  }
+
+  /* ════════════════════════════════
+     INLINE FORM — ADD / EDIT
+  ════════════════════════════════ */
+
+  // Live compute
+  ['id_quantity','id_unit_cost','id_vat','id_vat_wth'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', updateInlineComputed);
+  });
+
+  function updateInlineComputed() {
+    const qty = document.getElementById('id_quantity')?.value;
+    const uc  = document.getElementById('id_unit_cost')?.value;
+    const vat = document.getElementById('id_vat')?.value;
+    const vw  = document.getElementById('id_vat_wth')?.value;
+    const amt = calcAmount(qty, uc);
+    const net = calcNet(amt, vat, vw);
+    document.getElementById('inlineAmountDisplay').textContent = fmt(amt);
+    document.getElementById('inlineNetDisplay').textContent    = fmt(net);
+  }
+
+  function cancelInlineEdit() {
+    editingPk = null;
+    document.getElementById('inlineAddForm').reset();
+    document.getElementById('inlineEditPk').value = '';
+    document.getElementById('inlineAmountDisplay').textContent = '0.00';
+    document.getElementById('inlineNetDisplay').textContent    = '0.00';
+    document.getElementById('inlineFormErrors').innerHTML = '';
+    document.getElementById('inlineSubmitLabel').textContent = 'Save Record';
+    document.getElementById('addFormMode').textContent = 'NEW';
+    document.getElementById('addFormMode').style.background = 'var(--border)';
+    document.getElementById('addFormMode').style.color = 'var(--text-4)';
+    document.getElementById('inlineCancelBtn').style.display = 'none';
+    // Remove highlight from any row
+    document.querySelectorAll('.row-editing').forEach(r => r.classList.remove('row-editing'));
+  }
+
+  function startInlineEdit(pk) {
+    const editUrl = URLS.edit_maintenance.replace('/0/', `/${pk}/`);
+    fetch(editUrl)
+      .then(r => r.json())
+      .then(res => {
+        if (!res.success) { toast('Could not load record.', 'error'); return; }
+        cancelInlineEdit(); // reset first
+        const r = res.record;
+        editingPk = pk;
+
+        document.getElementById('inlineEditPk').value   = pk;
+        document.getElementById('id_date').value        = r.date;
+        document.getElementById('id_truck_number_plate').value = r.truck_number_plate;
+        document.getElementById('id_item_needed').value = r.item_needed;
+        document.getElementById('id_quantity').value    = r.quantity;
+        document.getElementById('id_unit_cost').value   = r.unit_cost;
+        document.getElementById('id_vat').value         = r.vat;
+        document.getElementById('id_vat_wth').value     = r.vat_wth || '';
+        document.getElementById('id_purchase_status').value = r.purchase_status;
+        document.getElementById('id_project').value     = r.project;
+        document.getElementById('id_cost_percentage').value = r.cost_percentage != null ? r.cost_percentage : '';
+
+        updateInlineComputed();
+
+        document.getElementById('inlineSubmitLabel').textContent = 'Update Record';
+        document.getElementById('addFormMode').textContent = 'EDITING';
+        document.getElementById('addFormMode').style.background = '#dbeafe';
+        document.getElementById('addFormMode').style.color = 'var(--blue)';
+        document.getElementById('inlineCancelBtn').style.display = '';
+
+        // Scroll form into view & highlight row
+        document.getElementById('addFormCard').scrollIntoView({ behavior:'smooth', block:'nearest' });
+        const row = document.getElementById(`row-${pk}`);
+        if (row) { row.style.background = '#eff6ff'; }
+      })
+      .catch(() => toast('Network error.', 'error'));
+  }
+
+  function submitInlineForm() {
+    const pk = document.getElementById('inlineEditPk').value;
+    const isEdit = !!pk;
+    const url = isEdit
+      ? URLS.edit_maintenance.replace('/0/', `/${pk}/`)
+      : URLS.add_maintenance;
+
+    const data = new FormData(document.getElementById('inlineAddForm'));
+    btnLoad('inlineSubmitBtn', true);
+
+    fetch(url, { method:'POST', headers:{'X-CSRFToken': csrf()}, body: data })
+      .then(r => r.json())
+      .then(res => {
+        btnLoad('inlineSubmitBtn', false);
+        if (res.success) {
+          toast(isEdit ? 'Record updated.' : 'Record added.', 'success');
+          cancelInlineEdit();
+          reloadData();
+        } else {
+          renderErrors(res.errors, 'inlineFormErrors');
+          toast('Please fix the highlighted errors.', 'error');
+        }
+      })
+      .catch(() => { btnLoad('inlineSubmitBtn', false); toast('Network error.', 'error'); });
+  }
+
+  /* ════════════════════════════════
+     DELETE
+  ════════════════════════════════ */
+
+  function openDeleteModal(pk, label) {
+    deleteTargetPk = pk;
+    document.getElementById('deleteLabel').textContent = `"${label}" (ID ${pk})`;
+    deleteModal.show();
+  }
+
+  function confirmDelete() {
+    if (!deleteTargetPk) return;
+    const url = URLS.delete_maintenance.replace('/0/', `/${deleteTargetPk}/`);
+    btnLoad('confirmDeleteBtn', true);
+    fetch(url, { method:'POST', headers:{'X-CSRFToken': csrf()} })
+      .then(r => r.json())
+      .then(res => {
+        btnLoad('confirmDeleteBtn', false);
+        if (res.success) {
+          deleteModal.hide();
+          toast('Record deleted.', 'info');
+          deleteTargetPk = null;
+          if (editingPk === res.id) cancelInlineEdit();
+          reloadData();
+        } else { toast('Delete failed.', 'error'); }
+      })
+      .catch(() => { btnLoad('confirmDeleteBtn', false); toast('Network error.', 'error'); });
+  }
+
+  /* ════════════════════════════════
+     CSV IMPORT
+  ════════════════════════════════ */
+
+  function handleCsvSelect(input) {
+    if (input.files && input.files[0]) {
+      const f = input.files[0];
+      document.getElementById('dropLabel').innerHTML = `<strong>${esc(f.name)}</strong> (${(f.size/1024).toFixed(1)} KB) — ready`;
+      document.getElementById('csvSubmitBtn').disabled = false;
+    }
+  }
+
+  const dz = document.getElementById('dropZone');
+  dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    if (e.dataTransfer.files.length) {
+      const dt = new DataTransfer(); dt.items.add(e.dataTransfer.files[0]);
+      const inp = document.getElementById('csvFileInput');
+      inp.files = dt.files; handleCsvSelect(inp);
+    }
+  });
+
+  function submitCsv() {
+    const input = document.getElementById('csvFileInput');
+    if (!input.files || !input.files[0]) { toast('Select a CSV file first.', 'error'); return; }
+    const fd = new FormData();
+    fd.append('csv_file', input.files[0]);
+    fd.append('skip_rows', document.getElementById('csvSkipRows').value || 1);
+    btnLoad('csvSubmitBtn', true);
+    fetch(URLS.import_csv, { method:'POST', headers:{'X-CSRFToken': csrf()}, body: fd })
+      .then(r => r.json())
+      .then(res => {
+        btnLoad('csvSubmitBtn', false);
+        const el = document.getElementById('csvResult');
+        if (res.success) {
+          let h = `<div class="import-result-ok">
+            <div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:4px;"><i class="bi bi-check-circle-fill"></i>&nbsp; ${res.created} record${res.created!==1?'s':''} imported</div>`;
+          if (res.errors && res.errors.length) {
+            h += `<div style="font-size:11.5px;color:var(--text-3);max-height:90px;overflow-y:auto;margin-top:6px;">`;
+            res.errors.forEach(e => { h += `<div>⚠️ ${esc(e)}</div>`; });
+            h += '</div>';
+          }
+          h += '</div>';
+          el.innerHTML = h;
+          toast(`Imported ${res.created} record(s).`, 'success');
+          reloadData();
+        } else {
+          el.innerHTML = `<div class="import-result-err"><div style="font-size:13px;font-weight:700;color:var(--red);"><i class="bi bi-x-circle-fill"></i>&nbsp; Import failed</div><div style="font-size:11.5px;color:var(--text-3);margin-top:6px;">${JSON.stringify(res.errors||'Unknown error',null,2)}</div></div>`;
+          toast('CSV import failed.', 'error');
+        }
+      })
+      .catch(() => { btnLoad('csvSubmitBtn', false); toast('Network error.', 'error'); });
+  }
+
+  /* ════════════════════════════════
+     CHARTS
+  ════════════════════════════════ */
+
+  const PALETTE = ['#2563eb','#7c3aed','#d97706','#16a34a','#dc2626','#0891b2','#9333ea','#65a30d','#ea580c','#0284c7','#4f46e5','#15803d'];
+
+  function renderCharts(c) {
+    Chart.defaults.font.family = "'JetBrains Mono', monospace";
+    Chart.defaults.font.size   = 11;
+    Chart.defaults.color       = '#6b7280';
+    renderBar(c.bar);
+    renderDonut('projectDoughnut', c.project_doughnut, projInst, v => projInst = v);
+    renderDonut('truckDoughnut', c.truck_doughnut, truckInst, v => truckInst = v);
+    renderDailyChart(c.daily_expenditure);
+    renderStockChart();
+    renderStatusDonut(c.purchase_status_pct);
+  }
+
+  function renderBar(d) {
+    const ctx = document.getElementById('barChart');
+    if (!ctx) return;
+    if (barInst) barInst.destroy();
+    barInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: d.labels,
+        datasets: [{
+          label: 'Amount (UGX)',
+          data: d.data,
+          backgroundColor: PALETTE.map(c => c + '28'),
+          borderColor: PALETTE,
+          borderWidth: 1.5,
+          borderRadius: 5,
+          borderSkipped: false,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' UGX ' + fmt(c.parsed.y) } }
+        },
+        scales: {
+          x: { grid: { color: '#f1f4f9' }, ticks: { maxRotation: 40, minRotation: 25 } },
+          y: { grid: { color: '#f1f4f9' }, ticks: { callback: v => fmt(v, 0) } }
+        }
+      }
+    });
+  }
+
+  function renderStockChart() {
+    const ctx = document.getElementById('stockChart');
+    if (!ctx) return;
+    if (stockInst) stockInst.destroy();
+    stockInst = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: allRecords.map(r => r.item_needed?.substring(0, 15) || ''),
+        datasets: [
+          { label: 'Stocked', data: allRecords.map(r => parseFloat(r.quantity_stocked) || 0), backgroundColor: 'rgba(37,99,235,0.7)', borderRadius: 3 },
+          { label: 'Released', data: allRecords.map(r => parseFloat(r.quantity_released) || 0), backgroundColor: 'rgba(220,38,38,0.65)', borderRadius: 3 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#374151', font: { size: 10 } } } },
+        scales: {
+          x: { ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 45 }, grid: { color: '#f1f4f9' } },
+          y: { ticks: { color: '#9ca3af', font: { size: 10 } }, grid: { color: '#f1f4f9' } }
+        }
+      }
+    });
+  }
+
+  function renderDailyChart(d) {
+    const ctx = document.getElementById('dailyChart');
+    if (!ctx) return;
+    if (dailyInst) dailyInst.destroy();
+    if (!d || !d.labels || !d.data) return;
+    dailyInst = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: d.labels,
+        datasets: [{
+          label: 'Daily Expenditure',
+          data: d.data,
+          backgroundColor: 'rgba(37,99,235,0.1)',
+          borderColor: '#2563eb',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.3,
+          pointRadius: 3,
+          pointBackgroundColor: '#2563eb',
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' UGX ' + fmt(c.parsed.y) } }
+        },
+        scales: {
+          x: { ticks: { color: '#9ca3af', font: { size: 9 }, maxRotation: 45 }, grid: { color: '#f1f4f9' } },
+          y: { ticks: { color: '#9ca3af', font: { size: 10 }, callback: v => fmt(v, 0) }, grid: { color: '#f1f4f9' } }
+        }
+      }
+    });
+  }
+
+  function renderStatusDonut(d) {
+    const ctx = document.getElementById('statusDoughnut');
+    if (!ctx) return;
+    if (statusInst) statusInst.destroy();
+    if (!d || !d.labels || !d.data) return;
+    statusInst = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: d.labels,
+        datasets: [{
+          data: d.data,
+          backgroundColor: ['rgba(5,150,105,0.78)', 'rgba(220,38,38,0.72)'],
+          borderColor: ['#059669', '#dc2626'],
+          borderWidth: 2,
+          hoverOffset: 5,
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { padding: 10, usePointStyle: true, pointStyle: 'circle', font: { size: 11 } } },
+          tooltip: { callbacks: { label: c => ` ${c.label}: ${fmt(c.parsed, 1)}%` } }
+        }
+      }
+    });
+  }
+
+  function renderDistribution(c) {
+    const el = document.getElementById('distributionTable');
+    if (!el) return;
+    const pd = c.project_doughnut || { labels:[], data:[] };
+    const total = pd.data.reduce((a,b) => a+b, 0);
+    let h = '';
+    pd.labels.forEach((lbl, i) => {
+      const pct = total > 0 ? (pd.data[i]/total*100).toFixed(1) : 0;
+      const color = PALETTE[i % PALETTE.length];
+      h += `<div class="dist-row">
+        <div class="dist-dot" style="background:${color};"></div>
+        <div class="dist-label">${esc(lbl)}</div>
+        <div class="dist-bar-wrap"><div class="dist-bar" style="width:${pct}%;background:${color}40;border:1px solid ${color}88;"></div></div>
+        <div class="dist-val">${fmt(pd.data[i])}<span class="dist-pct">${pct}%</span></div>
+      </div>`;
+    });
+    if (!pd.labels.length) h = '<div style="padding:20px; text-align:center; color:var(--text-4); font-size:12px;">No data for this period</div>';
+    el.innerHTML = h;
+  }
+
+  /* ════════════════════════════════
+     EVENT LISTENERS
+  ════════════════════════════════ */
+
+  document.getElementById('periodInput').addEventListener('change', function() {
+    currentPeriod = this.value; reloadData();
+  });
+
+  let searchT;
+  document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchT);
+    searchT = setTimeout(() => { currentSearch = this.value.trim(); reloadData(); }, 350);
+  });
+
+  /* ════════════════════════════════
+     GLOBAL EXPORTS
+  ════════════════════════════════ */
+
+  window.switchMainTab    = switchMainTab;
+  window.reloadData       = reloadData;
+  window.startInlineEdit  = startInlineEdit;
+  window.cancelInlineEdit = cancelInlineEdit;
+  window.submitInlineForm = submitInlineForm;
+  window.openDeleteModal  = openDeleteModal;
+  window.confirmDelete    = confirmDelete;
+  window.handleCsvSelect  = handleCsvSelect;
+  window.submitCsv        = submitCsv;
+  window.openAddModal     = () => { switchMainTab('entry'); cancelInlineEdit(); document.getElementById('addFormCard').scrollIntoView({ behavior:'smooth' }); };
+
+  /* ════════════════════════════════
+     BOOT
+  ════════════════════════════════ */
+
+  document.addEventListener('DOMContentLoaded', reloadData);
+
+})();
+</script>
+
+</body>
+</html>

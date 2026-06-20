@@ -1,0 +1,181 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Management Selection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --blue: #2563eb;
+      --blue-light: #eff6ff;
+      --green: #16a34a;
+      --green-light: #f0fdf4;
+      --border: #e2e7ef;
+      --text-1: #111827;
+      --text-2: #374151;
+      --font: 'Plus Jakarta Sans', sans-serif;
+    }
+    html, body {
+      height: 100%;
+      background: linear-gradient(135deg, #f4f6f9 0%, #e8edf5 100%);
+      font-family: var(--font);
+      margin: 0;
+    }
+    .selection-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .selection-card {
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+      padding: 50px 40px;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+    }
+    .selection-logo {
+      margin-bottom: 32px;
+    }
+    .selection-logo-icon {
+      width: 64px;
+      height: 64px;
+      background: var(--blue);
+      border-radius: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      margin-bottom: 16px;
+    }
+    .selection-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 8px;
+    }
+    .selection-subtitle {
+      font-size: 14px;
+      color: #6b7280;
+      margin-bottom: 36px;
+    }
+    .selection-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .selection-btn {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 20px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-family: var(--font);
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.15s;
+      border: 1.5px solid var(--border);
+    }
+    .selection-btn i {
+      font-size: 28px;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      flex-shrink: 0;
+    }
+    .selection-btn .btn-text {
+      flex: 1;
+      text-align: left;
+    }
+    .selection-btn .btn-label {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-1);
+    }
+    .selection-btn .btn-desc {
+      font-size: 12px;
+      color: #6b7280;
+      font-weight: 400;
+    }
+    .selection-btn.fleet {
+      background: var(--blue-light);
+      color: var(--blue);
+    }
+    .selection-btn.fleet i { background: var(--blue); color: white; }
+    .selection-btn.fleet:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+    .selection-btn.store {
+      background: var(--green-light);
+      color: var(--green);
+    }
+    .selection-btn.store i { background: var(--green); color: white; }
+    .selection-btn.store:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .logout-link {
+      margin-top: 24px;
+      font-size: 13px;
+    }
+    .logout-link a {
+      color: #6b7280;
+      text-decoration: none;
+    }
+    .logout-link a:hover { color: var(--blue); }
+  </style>
+</head>
+<body>
+  <div class="selection-wrapper">
+    <div class="selection-card">
+      <div class="selection-logo">
+        <div class="selection-logo-icon"><i class="bi bi-truck-front-fill"></i></div>
+        <div class="selection-title">IBBS <span style="color:var(--blue)">Reports</span></div>
+        <div class="selection-subtitle">Select a management system to continue</div>
+      </div>
+
+      <div class="selection-buttons">
+        <a href="{% url 'fleet_management:dashboard' %}" class="selection-btn fleet">
+          <i class="bi bi-truck-front-fill"></i>
+          <div class="btn-text">
+            <div class="btn-label">Fleet Management</div>
+            <div class="btn-desc">Vehicle maintenance & expense tracking</div>
+          </div>
+          <i class="bi bi-chevron-right"></i>
+        </a>
+
+        <a href="{% url 'store_management:dashboard' %}" class="selection-btn store">
+          <i class="bi bi-shop"></i>
+          <div class="btn-text">
+            <div class="btn-label">Store Management</div>
+            <div class="btn-desc">Inventory & transaction records</div>
+          </div>
+          <i class="bi bi-chevron-right"></i>
+        </a>
+      </div>
+
+      <div class="logout-link">
+        {% if user.is_authenticated %}
+          Logged in as <strong>{{ user.username }}</strong> &mdash; <a href="{% url 'logout' %}">Log out</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
